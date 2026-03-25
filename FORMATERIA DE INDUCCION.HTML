@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Eagle System V9 - Mobile Ready</title>
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <style>
+        :root {
+            --primary: #f6b93b; 
+            --secondary: #5dade2; 
+            --bg-body: #f0f3f6;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: var(--bg-body);
+            margin: 0; padding: 10px;
+            display: flex; justify-content: center;
+        }
+
+        .main-card {
+            background: #fff;
+            width: 100%;
+            max-width: 600px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            overflow: hidden;
+            border-top: 6px solid var(--secondary);
+        }
+
+        .header { background: var(--secondary); padding: 15px; text-align: center; color: white; }
+        .header h1 { margin: 0; font-size: 20px; text-transform: uppercase; letter-spacing: 2px; }
+
+        .content { padding: 20px; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .full { grid-column: span 2; }
+
+        label { display: block; font-size: 10px; font-weight: 700; color: #2e86c1; text-transform: uppercase; margin-bottom: 4px; }
+        input { 
+            width: 100%; padding: 10px; border: 1px solid #d1d8e0; border-radius: 8px; 
+            box-sizing: border-box; font-size: 14px; -webkit-appearance: none; 
+        }
+
+        .pdf-status { 
+            background: #eef7fe; border: 1px solid #3498db; padding: 8px; 
+            border-radius: 8px; margin-bottom: 15px; font-size: 11px; text-align: center;
+        }
+
+        .signature-box { margin-top: 20px; background: #fafafa; padding: 10px; border-radius: 10px; border: 1px solid #eee; }
+        
+        /* Contenedor relativo para el canvas */
+        .canvas-wrapper { position: relative; width: 100%; height: 200px; background: white; border: 1px solid #ccc; border-radius: 8px; overflow: hidden; }
+        canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; touch-action: none; cursor: crosshair; }
+
+        .actions { display: flex; gap: 10px; margin-top: 15px; }
+        button { flex: 1; padding: 14px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; }
+        .btn-clear { background: #eee; color: #666; }
+        .btn-generate { background: var(--secondary); color: white; flex: 2; }
+
+        @media (max-width: 480px) {
+            .form-grid { grid-template-columns: 1fr; }
+            .full { grid-column: span 1; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="main-card">
+    <div class="header">
+        <h1>Grupo Águilas</h1>
+        <p style="margin:0; font-size:10px;">SISTEMA MÓVIL DE INDUCCIÓN</p>
+    </div>
+
+    <div class="content">
+        <div id="statusBox" class="pdf-status">Cargando...</div>
+
+        <div class="form-grid">
+            <div class="full"><label>👤 Nombre Completo</label><input type="text" id="nombre" placeholder="Nombre"></div>
+            <div><label>🆔 Número de Orden</label><input type="text" id="orden" placeholder="Orden"></div>
+            <div><label>🏢 Planta</label><input type="text" id="planta" placeholder="Planta"></div>
+            <div><label>📍 Ciudad</label><input type="text" id="ciudad" value="Cd. Juarez Chih."></div>
+            <div><label>📅 Fecha</label><input type="date" id="fecha"></div>
+        </div>
+
+        <div class="signature-box">
+            <label>🖋️ Firma del Trabajador:</label>
+            <div class="canvas-wrapper">
+                <canvas id="canvasFirma"></canvas>
+            </div>
+            <div class="actions">
+                <button class="btn-clear" onclick="limpiarCanvas()">Limpiar</button>
+                <button id="btnGenerar" class="btn-generate" onclick="confirmar()">Generar PDF</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('canvasFirma');
+    const ctx = canvas.getContext('2d');
+    let dibujando = false;
+    let pdfMaestroArrayBuffer = null;
+
+    // --- CORRECCIÓN DE DESFASE Y RESPONSIVIDAD ---
+    function ajustarResolucionCanvas() {
+        const rect = canvas.getBoundingClientRect();
+        // Sincronizamos los píxeles internos con el tamaño visual
+        canvas.width = rect.width * window.devicePixelRatio;
+        canvas.height = rect.height * window.devicePixelRatio;
+        ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+        ctx.lineWidth = 3;
+        ctx.lineCap = 'round';
+        ctx.strokeStyle = '#0c2461';
+    }
+
+    function getPos(e) {
+        const rect = canvas.getBoundingClientRect();
+        const clientX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
+        const clientY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
+        
+        // Calculamos la posición exacta relativa al canvas
+        return {
+            x: clientX - rect.left,
+            y: clientY - rect.top
+        };
+    }
+
+    // Eventos de dibujo
+    const iniciarDibujo = (e) => {
+        dibujando = true;
+        const {x, y} = getPos(e);
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+    };
+
+    const moverDibujo = (e) => {
+        if (!dibujando) return;
+        if (e.touches) e.preventDefault(); // Evita scroll al firmar
+        const {x, y} = getPos(e);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+    };
+
+    canvas.addEventListener('mousedown', iniciarDibujo);
+    canvas.addEventListener('touchstart', iniciarDibujo, {passive: false});
+    window.addEventListener('mousemove', moverDibujo);
+    window.addEventListener('touchmove', moverDibujo, {passive: false});
+    window.addEventListener('mouseup', () => dibujando = false);
+    window.addEventListener('touchend', () => dibujando = false);
+
+    // Reajustar si el celular rota o cambia de tamaño
+    window.addEventListener('resize', ajustarResolucionCanvas);
+    window.addEventListener('orientationchange', () => setTimeout(ajustarResolucionCanvas, 200));
+    setTimeout(ajustarResolucionCanvas, 500);
+
+    // --- PERSISTENCIA PDF (IndexedDB) ---
+    const dbName = "EagleDB";
+    const storeName = "PDFStore";
+    let db;
+    const request = indexedDB.open(dbName, 1);
+    request.onupgradeneeded = (e) => e.target.result.createObjectStore(storeName);
+    request.onsuccess = (e) => { db = e.target.result; cargarPDF(); };
+
+    function cargarPDF() {
+        const getReq = db.transaction([storeName], "readonly").objectStore(storeName).get("maestro");
+        getReq.onsuccess = () => {
+            if (getReq.result) {
+                pdfMaestroArrayBuffer = getReq.result;
+                actualizarStatus(true);
+            } else { actualizarStatus(false); }
+        };
+    }
+
+    function actualizarStatus(cargado) {
+        const box = document.getElementById('statusBox');
+        if (cargado) {
+            box.style.background = "#d4edda"; box.style.color = "#155724";
+            box.innerHTML = `PDF Maestro: Listo ✅ <button onclick="borrarPDF()" style="font-size:9px;">Cambiar</button>`;
+        } else {
+            box.style.background = "#fef9e7"; box.style.color = "#9a7d0a";
+            box.innerHTML = `Cargue PDF una vez: <input type="file" accept="application/pdf" onchange="guardarPDF(this)">`;
+        }
+    }
+
+    function guardarPDF(input) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            pdfMaestroArrayBuffer = e.target.result;
+            db.transaction([storeName], "readwrite").objectStore(storeName).put(pdfMaestroArrayBuffer, "maestro");
+            actualizarStatus(true);
+        };
+        reader.readAsArrayBuffer(input.files[0]);
+    }
+
+    function borrarPDF() {
+        if(confirm("¿Eliminar PDF maestro?")) {
+            db.transaction([storeName], "readwrite").objectStore(storeName).delete("maestro");
+            pdfMaestroArrayBuffer = null; actualizarStatus(false);
+        }
+    }
+
+    function limpiarCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
+
+    function getTrimmedSignature() {
+        // Necesitamos obtener los datos sin la escala del devicePixelRatio para el PDF
+        const rect = canvas.getBoundingClientRect();
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = rect.width;
+        tempCanvas.height = rect.height;
+        const tempCtx = tempCanvas.getContext('2d');
+        tempCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, rect.width, rect.height);
+
+        const imgData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+        const bytes = imgData.data;
+        let minX = tempCanvas.width, minY = tempCanvas.height, maxX = 0, maxY = 0, hasContent = false;
+        for (let y = 0; y < tempCanvas.height; y++) {
+            for (let x = 0; x < tempCanvas.width; x++) {
+                if (bytes[(y * tempCanvas.width + x) * 4 + 3] > 0) {
+                    if (x < minX) minX = x; if (x > maxX) maxX = x;
+                    if (y < minY) minY = y; if (y > maxY) maxY = y;
+                    hasContent = true;
+                }
+            }
+        }
+        if (!hasContent) return null;
+        const w = maxX - minX + 1, h = maxY - minY + 1;
+        const finalCanvas = document.createElement('canvas');
+        finalCanvas.width = w; finalCanvas.height = h;
+        finalCanvas.getContext('2d').putImageData(tempCtx.getImageData(minX, minY, w, h), 0, 0);
+        return finalCanvas.toDataURL();
+    }
+
+    function confirmar() {
+        if (!pdfMaestroArrayBuffer) return alert("Suba el PDF.");
+        if (!document.getElementById('nombre').value || !document.getElementById('fecha').value) return alert("Faltan datos.");
+        if (confirm("¿Generar expediente ahora?")) generar();
+    }
+
+    async function generar() {
+        try {
+            const btn = document.getElementById('btnGenerar');
+            btn.disabled = true; btn.innerText = "...";
+
+            const { PDFDocument } = PDFLib;
+            const nombre = document.getElementById('nombre').value.toUpperCase();
+            const orden = document.getElementById('orden').value;
+            const planta = document.getElementById('planta').value.toUpperCase();
+            const ciudad = document.getElementById('ciudad').value;
+            const fechaRaw = document.getElementById('fecha').value;
+            
+            const meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+            const dObj = new Date(fechaRaw + "T12:00:00");
+            const dia = dObj.getDate().toString(), mes = meses[dObj.getMonth()], añoFull = dObj.getFullYear().toString();
+
+            const firmaUrl = getTrimmedSignature();
+            if (!firmaUrl) throw new Error("Firme el cuadro.");
+
+            const doc = await PDFDocument.load(pdfMaestroArrayBuffer.slice(0));
+            const firmaImg = await doc.embedPng(firmaUrl);
+            const p = doc.getPages();
+
+            const drawSign = (page, x, y, maxW = 100, maxH = 40) => {
+                let w = firmaImg.width, h = firmaImg.height, ratio = w / h;
+                if (w > maxW) { w = maxW; h = w / ratio; }
+                if (h > maxH) { h = maxH; w = h * ratio; }
+                page.drawImage(firmaImg, { x, y, width: w, height: h });
+            };
+
+            // HOJAS (Coordenadas solicitadas)
+            if(p[1]) {
+                p[1].drawText(ciudad, { x: 137, y: 251, size: 10 });
+                p[1].drawText(dia, { x: 262, y: 251, size: 10 });
+                p[1].drawText(mes, { x: 343, y: 251, size: 10 });
+                p[1].drawText(añoFull, { x: 482, y: 251, size: 10 });
+                p[1].drawText(orden, { x: 170, y: 545, size: 10 });
+                p[1].drawText(nombre, { x: 124, y: 497, size: 10 });
+                drawSign(p[1], 113, 203, 100, 35);
+            }
+            if(p[2]) {
+                p[2].drawText(dia, { x: 127, y: 73, size: 9 });
+                p[2].drawText(mes, { x: 166, y: 73, size: 9 });
+                p[2].drawText(añoFull, { x: 249, y: 73, size: 9 });
+                p[2].drawText(orden, { x: 380, y: 73, size: 9 });
+                p[2].drawText(nombre, { x: 89, y: 47, size: 9 });
+                drawSign(p[2], 383, 40, 70, 30);
+            }
+            if(p[3]) {
+                p[3].drawText(nombre, { x: 209, y: 148, size: 9 });
+                p[3].drawText(orden, { x: 219, y: 124, size: 9 });
+                p[3].drawText(`${dia}-${mes.substring(0,3)}-${añoFull}`, { x: 356, y: 124, size: 9 });
+                drawSign(p[3], 433, 148, 80, 35);
+            }
+            if(p[4]) {
+                p[4].drawText(nombre, { x: 91, y: 679, size: 10 }); p[4].drawText(planta, { x: 457, y: 641, size: 10 });
+                p[4].drawText(`${dia}/${mes}/${añoFull}`, { x: 495, y: 724, size: 9 }); drawSign(p[4], 117, 580, 90, 40);
+                p[4].drawText(nombre, { x: 93, y: 414, size: 10 }); p[4].drawText(planta, { x: 461, y: 375, size: 10 });
+                p[4].drawText(`${dia}/${mes}/${añoFull}`, { x: 497, y: 458, size: 9 }); drawSign(p[4], 110, 316, 90, 40);
+            }
+            if(p[7]) {
+                p[7].drawText(nombre, { x: 115, y: 148, size: 9 }); p[7].drawText(orden, { x: 406, y: 127, size: 9 });
+                p[7].drawText(`${dia} de ${mes} de ${añoFull}`, { x: 106, y: 127, size: 8 }); drawSign(p[7], 443, 149, 80, 35);
+            }
+
+            for (let i = 8; i <= 18; i++) {
+                if (p[i]) { drawSign(p[i], 18, 30, 100, 40); }
+            }
+
+            if(p[19]) {
+                p[19].drawText(nombre, { x: 236, y: 193, size: 11 });
+                p[19].drawText(`${dia} de ${mes} de ${añoFull}`, { x: 177, y: 113, size: 11 });
+                drawSign(p[19], 180, 141, 100, 40);
+            }
+
+            const outBytes = await doc.save();
+            const blob = new Blob([outBytes], { type: "application/pdf" });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `${orden} ${nombre} ${planta} ${dia}_${mes}_${añoFull} DOCUMENTACION DE INDUCCION.pdf`;
+            link.click();
+
+            // Limpiar
+            document.getElementById('nombre').value = ""; document.getElementById('orden').value = "";
+            document.getElementById('planta').value = ""; document.getElementById('fecha').value = "";
+            limpiarCanvas(); btn.disabled = false; btn.innerText = "Generar PDF";
+
+        } catch (e) { alert("Error: " + e.message); btn.disabled = false; btn.innerText = "Generar PDF"; }
+    }
+</script>
+</body>
+</html>
