@@ -3,60 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Eagle System V9 - Mobile Ready</title>
+    <title>Eagle System V11 - Pro</title>
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <style>
         :root {
             --primary: #f6b93b; 
-            --secondary: #5dade2; 
-            --bg-body: #f0f3f6;
+            --secondary: #3498db; /* Azul Cielo Suave */
+            --dark-blue: #2980b9;
+            --bg-body: #f4f7f9;
         }
 
         body {
-            font-family: 'Segoe UI', sans-serif;
+            font-family: 'Segoe UI', Tahoma, sans-serif;
             background-color: var(--bg-body);
             margin: 0; padding: 10px;
             display: flex; justify-content: center;
+            align-items: center; min-height: 100vh;
         }
 
         .main-card {
             background: #fff;
             width: 100%;
             max-width: 600px;
-            border-radius: 15px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            border-radius: 20px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.1);
             overflow: hidden;
-            border-top: 6px solid var(--secondary);
+            border-top: 8px solid var(--secondary);
         }
 
-        .header { background: var(--secondary); padding: 15px; text-align: center; color: white; }
-        .header h1 { margin: 0; font-size: 20px; text-transform: uppercase; letter-spacing: 2px; }
+        .header { background: var(--secondary); padding: 20px; text-align: center; color: white; }
+        .header h1 { margin: 0; font-size: 22px; text-transform: uppercase; letter-spacing: 2px; }
 
-        .content { padding: 20px; }
-        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .content { padding: 25px; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         .full { grid-column: span 2; }
 
-        label { display: block; font-size: 10px; font-weight: 700; color: #2e86c1; text-transform: uppercase; margin-bottom: 4px; }
+        label { display: block; font-size: 11px; font-weight: 700; color: var(--dark-blue); text-transform: uppercase; margin-bottom: 5px; }
         input { 
-            width: 100%; padding: 10px; border: 1px solid #d1d8e0; border-radius: 8px; 
-            box-sizing: border-box; font-size: 14px; -webkit-appearance: none; 
+            width: 100%; padding: 12px; border: 1.5px solid #d1d8e0; border-radius: 10px; 
+            box-sizing: border-box; font-size: 14px; transition: 0.3s;
         }
+        input:focus { outline: none; border-color: var(--secondary); box-shadow: 0 0 8px rgba(52, 152, 219, 0.2); }
 
         .pdf-status { 
-            background: #eef7fe; border: 1px solid #3498db; padding: 8px; 
-            border-radius: 8px; margin-bottom: 15px; font-size: 11px; text-align: center;
+            background: #eef7fe; border: 1px solid #3498db; padding: 10px; 
+            border-radius: 10px; margin-bottom: 20px; font-size: 12px; text-align: center; font-weight: bold;
         }
 
-        .signature-box { margin-top: 20px; background: #fafafa; padding: 10px; border-radius: 10px; border: 1px solid #eee; }
-        
-        /* Contenedor relativo para el canvas */
-        .canvas-wrapper { position: relative; width: 100%; height: 200px; background: white; border: 1px solid #ccc; border-radius: 8px; overflow: hidden; }
-        canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; touch-action: none; cursor: crosshair; }
+        .signature-box { margin-top: 25px; background: #fdfdfd; padding: 15px; border-radius: 15px; border: 1px solid #e1e8f0; }
+        .canvas-container { position: relative; width: 100%; height: 200px; background: white; border: 1px solid #ccc; border-radius: 10px; overflow: hidden; }
+        canvas { width: 100%; height: 100%; touch-action: none; cursor: crosshair; }
 
-        .actions { display: flex; gap: 10px; margin-top: 15px; }
-        button { flex: 1; padding: 14px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; }
-        .btn-clear { background: #eee; color: #666; }
-        .btn-generate { background: var(--secondary); color: white; flex: 2; }
+        .actions { display: flex; gap: 15px; margin-top: 20px; }
+        button { flex: 1; padding: 16px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; transition: 0.3s; }
+        .btn-clear { background: #ecf0f1; color: #7f8c8d; }
+        .btn-generate { background: var(--secondary); color: white; flex: 2; font-size: 16px; }
 
         @media (max-width: 480px) {
             .form-grid { grid-template-columns: 1fr; }
@@ -69,28 +70,28 @@
 <div class="main-card">
     <div class="header">
         <h1>Grupo Águilas</h1>
-        <p style="margin:0; font-size:10px;">SISTEMA MÓVIL DE INDUCCIÓN</p>
+        <p style="margin:0; font-size:11px; font-weight:bold;">SISTEMA PROFESIONAL DE INDUCCIÓN</p>
     </div>
 
     <div class="content">
-        <div id="statusBox" class="pdf-status">Cargando...</div>
+        <div id="statusBox" class="pdf-status">Iniciando base de datos...</div>
 
         <div class="form-grid">
-            <div class="full"><label>👤 Nombre Completo</label><input type="text" id="nombre" placeholder="Nombre"></div>
-            <div><label>🆔 Número de Orden</label><input type="text" id="orden" placeholder="Orden"></div>
-            <div><label>🏢 Planta</label><input type="text" id="planta" placeholder="Planta"></div>
+            <div class="full"><label>👤 Nombre Completo</label><input type="text" id="nombre" placeholder="MIGUEL ANGEL ALDERETE"></div>
+            <div><label>🆔 Número de Orden</label><input type="text" id="orden" placeholder="Ej: 10062"></div>
+            <div><label>🏢 Planta / Servicio</label><input type="text" id="planta" placeholder="Ubicación"></div>
             <div><label>📍 Ciudad</label><input type="text" id="ciudad" value="Cd. Juarez Chih."></div>
-            <div><label>📅 Fecha</label><input type="date" id="fecha"></div>
+            <div class="full"><label>📅 Fecha de Firma</label><input type="date" id="fecha"></div>
         </div>
 
         <div class="signature-box">
-            <label>🖋️ Firma del Trabajador:</label>
-            <div class="canvas-wrapper">
+            <label>🖋️ Firmar Aquí:</label>
+            <div class="canvas-container">
                 <canvas id="canvasFirma"></canvas>
             </div>
             <div class="actions">
                 <button class="btn-clear" onclick="limpiarCanvas()">Limpiar</button>
-                <button id="btnGenerar" class="btn-generate" onclick="confirmar()">Generar PDF</button>
+                <button id="btnGenerar" class="btn-generate" onclick="confirmarGeneracion()">Generar PDF</button>
             </div>
         </div>
     </div>
@@ -102,57 +103,50 @@
     let dibujando = false;
     let pdfMaestroArrayBuffer = null;
 
-    // --- CORRECCIÓN DE DESFASE Y RESPONSIVIDAD ---
-    function ajustarResolucionCanvas() {
+    // --- MANEJO DE FIRMA RESISTENTE A ROTACIÓN ---
+    function ajustarCanvas() {
+        let copiaTemporal = null;
+        if (ctx) copiaTemporal = canvas.toDataURL();
+
         const rect = canvas.getBoundingClientRect();
-        // Sincronizamos los píxeles internos con el tamaño visual
-        canvas.width = rect.width * window.devicePixelRatio;
-        canvas.height = rect.height * window.devicePixelRatio;
-        ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+        ctx.scale(dpr, dpr);
+
         ctx.lineWidth = 3;
         ctx.lineCap = 'round';
         ctx.strokeStyle = '#0c2461';
+
+        if (copiaTemporal) {
+            const img = new Image();
+            img.onload = () => ctx.drawImage(img, 0, 0, rect.width, rect.height);
+            img.src = copiaTemporal;
+        }
     }
 
     function getPos(e) {
         const rect = canvas.getBoundingClientRect();
         const clientX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
         const clientY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
-        
-        // Calculamos la posición exacta relativa al canvas
-        return {
-            x: clientX - rect.left,
-            y: clientY - rect.top
-        };
+        return { x: clientX - rect.left, y: clientY - rect.top };
     }
 
-    // Eventos de dibujo
-    const iniciarDibujo = (e) => {
+    canvas.onmousedown = canvas.ontouchstart = (e) => {
         dibujando = true;
         const {x, y} = getPos(e);
-        ctx.beginPath();
-        ctx.moveTo(x, y);
+        ctx.beginPath(); ctx.moveTo(x, y);
     };
-
-    const moverDibujo = (e) => {
+    window.onmousemove = window.ontouchmove = (e) => {
         if (!dibujando) return;
-        if (e.touches) e.preventDefault(); // Evita scroll al firmar
+        if (e.touches) e.preventDefault();
         const {x, y} = getPos(e);
-        ctx.lineTo(x, y);
-        ctx.stroke();
+        ctx.lineTo(x, y); ctx.stroke();
     };
+    window.onmouseup = window.ontouchend = () => { dibujando = false; ctx.beginPath(); };
 
-    canvas.addEventListener('mousedown', iniciarDibujo);
-    canvas.addEventListener('touchstart', iniciarDibujo, {passive: false});
-    window.addEventListener('mousemove', moverDibujo);
-    window.addEventListener('touchmove', moverDibujo, {passive: false});
-    window.addEventListener('mouseup', () => dibujando = false);
-    window.addEventListener('touchend', () => dibujando = false);
-
-    // Reajustar si el celular rota o cambia de tamaño
-    window.addEventListener('resize', ajustarResolucionCanvas);
-    window.addEventListener('orientationchange', () => setTimeout(ajustarResolucionCanvas, 200));
-    setTimeout(ajustarResolucionCanvas, 500);
+    window.addEventListener('resize', () => setTimeout(ajustarCanvas, 150));
+    setTimeout(ajustarCanvas, 500);
 
     // --- PERSISTENCIA PDF (IndexedDB) ---
     const dbName = "EagleDB";
@@ -178,7 +172,7 @@
             box.style.background = "#d4edda"; box.style.color = "#155724";
             box.innerHTML = `PDF Maestro: Listo ✅ <button onclick="borrarPDF()" style="font-size:9px;">Cambiar</button>`;
         } else {
-            box.style.background = "#fef9e7"; box.style.color = "#9a7d0a";
+            box.style.background = "#fff3cd"; box.style.color = "#856404";
             box.innerHTML = `Cargue PDF una vez: <input type="file" accept="application/pdf" onchange="guardarPDF(this)">`;
         }
     }
@@ -194,7 +188,7 @@
     }
 
     function borrarPDF() {
-        if(confirm("¿Eliminar PDF maestro?")) {
+        if(confirm("¿Eliminar PDF guardado?")) {
             db.transaction([storeName], "readwrite").objectStore(storeName).delete("maestro");
             pdfMaestroArrayBuffer = null; actualizarStatus(false);
         }
@@ -203,14 +197,11 @@
     function limpiarCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
 
     function getTrimmedSignature() {
-        // Necesitamos obtener los datos sin la escala del devicePixelRatio para el PDF
         const rect = canvas.getBoundingClientRect();
         const tempCanvas = document.createElement('canvas');
-        tempCanvas.width = rect.width;
-        tempCanvas.height = rect.height;
+        tempCanvas.width = rect.width; tempCanvas.height = rect.height;
         const tempCtx = tempCanvas.getContext('2d');
         tempCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, rect.width, rect.height);
-
         const imgData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
         const bytes = imgData.data;
         let minX = tempCanvas.width, minY = tempCanvas.height, maxX = 0, maxY = 0, hasContent = false;
@@ -231,10 +222,10 @@
         return finalCanvas.toDataURL();
     }
 
-    function confirmar() {
-        if (!pdfMaestroArrayBuffer) return alert("Suba el PDF.");
+    function confirmarGeneracion() {
+        if (!pdfMaestroArrayBuffer) return alert("Cargue el PDF Maestro.");
         if (!document.getElementById('nombre').value || !document.getElementById('fecha').value) return alert("Faltan datos.");
-        if (confirm("¿Generar expediente ahora?")) generar();
+        if (confirm("¿Estás seguro de que deseas generar el PDF con estos datos?")) generar();
     }
 
     async function generar() {
@@ -254,7 +245,7 @@
             const dia = dObj.getDate().toString(), mes = meses[dObj.getMonth()], añoFull = dObj.getFullYear().toString();
 
             const firmaUrl = getTrimmedSignature();
-            if (!firmaUrl) throw new Error("Firme el cuadro.");
+            if (!firmaUrl) throw new Error("Firme antes de continuar.");
 
             const doc = await PDFDocument.load(pdfMaestroArrayBuffer.slice(0));
             const firmaImg = await doc.embedPng(firmaUrl);
@@ -267,7 +258,7 @@
                 page.drawImage(firmaImg, { x, y, width: w, height: h });
             };
 
-            // HOJAS (Coordenadas solicitadas)
+            // PÁGINA 2
             if(p[1]) {
                 p[1].drawText(ciudad, { x: 137, y: 251, size: 10 });
                 p[1].drawText(dia, { x: 262, y: 251, size: 10 });
@@ -277,6 +268,7 @@
                 p[1].drawText(nombre, { x: 124, y: 497, size: 10 });
                 drawSign(p[1], 113, 203, 100, 35);
             }
+            // PÁGINA 3
             if(p[2]) {
                 p[2].drawText(dia, { x: 127, y: 73, size: 9 });
                 p[2].drawText(mes, { x: 166, y: 73, size: 9 });
@@ -285,27 +277,40 @@
                 p[2].drawText(nombre, { x: 89, y: 47, size: 9 });
                 drawSign(p[2], 383, 40, 70, 30);
             }
+            // PÁGINA 4
             if(p[3]) {
                 p[3].drawText(nombre, { x: 209, y: 148, size: 9 });
                 p[3].drawText(orden, { x: 219, y: 124, size: 9 });
                 p[3].drawText(`${dia}-${mes.substring(0,3)}-${añoFull}`, { x: 356, y: 124, size: 9 });
                 drawSign(p[3], 433, 148, 80, 35);
             }
+            // PÁGINA 5
             if(p[4]) {
-                p[4].drawText(nombre, { x: 91, y: 679, size: 10 }); p[4].drawText(planta, { x: 457, y: 641, size: 10 });
-                p[4].drawText(`${dia}/${mes}/${añoFull}`, { x: 495, y: 724, size: 9 }); drawSign(p[4], 117, 580, 90, 40);
-                p[4].drawText(nombre, { x: 93, y: 414, size: 10 }); p[4].drawText(planta, { x: 461, y: 375, size: 10 });
-                p[4].drawText(`${dia}/${mes}/${añoFull}`, { x: 497, y: 458, size: 9 }); drawSign(p[4], 110, 316, 90, 40);
+                p[4].drawText(nombre, { x: 91, y: 679, size: 10 });
+                p[4].drawText(planta, { x: 457, y: 641, size: 10 });
+                p[4].drawText(`${dia}/${mes}/${añoFull}`, { x: 495, y: 724, size: 9 });
+                drawSign(p[4], 117, 580, 90, 40);
+                p[4].drawText(nombre, { x: 93, y: 414, size: 10 });
+                p[4].drawText(planta, { x: 461, y: 375, size: 10 });
+                p[4].drawText(`${dia}/${mes}/${añoFull}`, { x: 497, y: 458, size: 9 });
+                drawSign(p[4], 110, 316, 90, 40);
             }
+            // PÁGINA 8
             if(p[7]) {
-                p[7].drawText(nombre, { x: 115, y: 148, size: 9 }); p[7].drawText(orden, { x: 406, y: 127, size: 9 });
-                p[7].drawText(`${dia} de ${mes} de ${añoFull}`, { x: 106, y: 127, size: 8 }); drawSign(p[7], 443, 149, 80, 35);
+                p[7].drawText(nombre, { x: 115, y: 148, size: 9 });
+                p[7].drawText(orden, { x: 406, y: 127, size: 9 });
+                p[7].drawText(`${dia} de ${mes} de ${añoFull}`, { x: 106, y: 127, size: 8 });
+                drawSign(p[7], 443, 149, 80, 35);
             }
 
+            // --- REGLAMENTO (PÁGINAS 9 A 19 - COORDENADA SOLICITADA X: 18, Y: 30) ---
             for (let i = 8; i <= 18; i++) {
-                if (p[i]) { drawSign(p[i], 18, 30, 100, 40); }
+                if (p[i]) {
+                    drawSign(p[i], 18, 30, 100, 40); // Firma horizontal en la esquina
+                }
             }
 
+            // PÁGINA 20
             if(p[19]) {
                 p[19].drawText(nombre, { x: 236, y: 193, size: 11 });
                 p[19].drawText(`${dia} de ${mes} de ${añoFull}`, { x: 177, y: 113, size: 11 });
@@ -319,7 +324,7 @@
             link.download = `${orden} ${nombre} ${planta} ${dia}_${mes}_${añoFull} DOCUMENTACION DE INDUCCION.pdf`;
             link.click();
 
-            // Limpiar
+            // LIMPIAR
             document.getElementById('nombre').value = ""; document.getElementById('orden').value = "";
             document.getElementById('planta').value = ""; document.getElementById('fecha').value = "";
             limpiarCanvas(); btn.disabled = false; btn.innerText = "Generar PDF";
